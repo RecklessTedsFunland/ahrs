@@ -10,11 +10,11 @@
 
 **Website:** http://github.com/walchko/ahrs
 
-This implements AHRS code written by ![Midgwick](http://www.github.com) designed to take the
+This implements AHRS code written by [Midgwick](http://www.github.com) designed to take the
 readings from accelerometers, gyros, and magnetometers and calculate the pose (roll,
 pitch, and yaw) of the sensor.
 
-The data come from the MiniIMU9 Ver 1 from ![Pololu](http://www.pololu.com). The IMU has:
+The data come from the MiniIMU9 Ver 1 from [Pololu](http://www.pololu.com). The IMU has:
 
 * L3G4200D 3-axis gyro
 * LSM303DLM 3-axis accelerometer and 3-axis magnetometer
