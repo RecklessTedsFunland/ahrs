@@ -10,7 +10,7 @@
 
 **Website:** http://github.com/walchko/ahrs
 
-This implements AHRS code written by [Midgwick](http://www.github.com) designed to take the
+This implements AHRS code written by [Midgwick](http://github.com/walchko/ahrs/tree/master/docs/madgwick.pdf) designed to take the
 readings from accelerometers, gyros, and magnetometers and calculate the pose (roll,
 pitch, and yaw) of the sensor.
 
