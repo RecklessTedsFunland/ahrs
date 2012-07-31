@@ -29,21 +29,45 @@ ripple in the stop band. The filter is designed for:
 * Stop band Attenuation: 60 dB
 * Order: 5
 
+The filter is implemeted as:
 
-### Command Line
+![image](http://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Biquad_filter_DF-I.svg/500px-Biquad_filter_DF-I.svg.png)
+
+## Octave
+
+In the octave directory are several m-files used to design the IIR filter. From the
+Octave commandline type:
+
+1. load_imu
+2. makefilter
+
+This will load the data from test.txt which is just a csv file. Then the the order of 
+the filter is determined and the filter is designed.
+
+## Command Line
 
 	rosrun ahrs ahrs
 
+## Subscribed Topics:
+
+** IMU Message **
+
+"/imu" is the IMU message from the soccer robot package 
+([Imu.msg](http://github.com/walchko/soccer/blob/master/msg/Imu.msg))
+
+
 #### Published Topics: 
+
 **something:** 
 
 "/imu/something" some data
 
-### To Do
+## To Do
 
 * optimize for a certain Hz
+* clean up octave scripts
 
-## Viewer Node: IMU
+# Viewer Node: IMU Viewer
 
 **Author:** Kevin Walchko
 
@@ -55,17 +79,17 @@ ripple in the stop band. The filter is designed for:
 
 A QGLViewer that takes inputs from MiniIMU9 and displays the pose of the sensor.
 
-### Command Line
+## Command Line
 
 	rosrun viewer ahrs_view -c /my/imu
 
 * c: imu
 
-#### Example:
+## Example:
 
  	rosrun viewer ahrs_view -c "/imu/data"
 
-### To Do
+## To Do
 
 * something
 
