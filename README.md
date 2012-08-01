@@ -18,16 +18,18 @@ pitch, and yaw) of the sensor.
 
 ![IMU](http://i1268.photobucket.com/albums/jj568/mars_university/blog/MinIMU-9-Ver1.png)
 
-The data come from the MiniIMU9 Ver 1 from [Pololu](http://www.pololu.com). The IMU has:
+The data comes from the MiniIMU9 Ver 1 from [Pololu](http://www.pololu.com) which
+exposes an I2C interface to get the data. The Inertial Measurement Unit (IMU) has
+the following sensors:
 
-* L3G4200D 3-axis gyro
-* LSM303DLM 3-axis accelerometer and 3-axis magnetometer
+* L3G4200D 3-axis gyro (16b reading)
+* LSM303DLM 3-axis accelerometer and 3-axis magnetometer (both 12b readings)
 
 ## Digital Filter
 
-The node currently grabs IMU data at *XX* Hz and filters it with a Chebyshev Type II
+The AHRS node currently grabs IMU data at 20 Hz (but that is changeable) and filters it with a Chebyshev Type II
 Infinite Impulse Response (IIR) filter. The Type II has a flat pass band response and a 
-ripple in the stop band. The filter is designed for:
+equiripple in the stop band. The filter is designed for:
 
 * Sample Freq: 20 Hz
 * Pass band: 0.8
@@ -35,13 +37,13 @@ ripple in the stop band. The filter is designed for:
 * Stop band Attenuation: 40 dB
 * Order: 5
 
-The filter is implemented as:
+The filter is implemented as the following difference equation:
 
 ![image](http://i1268.photobucket.com/albums/jj568/mars_university/blog/filter-direct.png)
 
 ## Octave
 
-In the octave directory are several m-files used to design the IIR filter. From the
+The digital filter was developed using Octave. In the octave directory are several m-files used to design the IIR filter. From the
 Octave command line type:
 
 1. load_imu
@@ -85,19 +87,24 @@ the filter is determined and the filter is designed.
 
 **Website:** http://github.com/walchko/MiniIMU9/viewer
 
-A QGLViewer that takes inputs from MiniIMU9 and displays the pose of the sensor.
+A QGLViewer that takes inputs from MiniIMU9 and displays the pose of the sensor in
+real-time.
 
 ## Command Line
 
-	rosrun ahrs ahrs_view -c /my/imu
-
-* c: imu
+	rosrun ahrs ahrs_view
 
 ## Example:
 
- 	rosrun ahrs ahrs_view -c "/imu/data"
+ 	rosrun ahrs ahrs_view
+ 	
+![imu_pose_image]()
 
 ## To Do
 
 * something
+
+# Test
+
+![test](http://youtu.be/cxBDABA8aSM)
 
