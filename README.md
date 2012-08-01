@@ -1,6 +1,6 @@
 # ROS Node: AHRS
 
-**Original Authors:** Willow Garage
+**Original Author:** Midgwick
 
 **Current Author:** Kevin Walchko
 
@@ -14,10 +14,16 @@ This implements AHRS code written by [Midgwick](http://github.com/walchko/ahrs/t
 readings from accelerometers, gyros, and magnetometers and calculate the pose (roll,
 pitch, and yaw) of the sensor.
 
+## IMU
+
+![IMU](http://i1268.photobucket.com/albums/jj568/mars_university/blog/MinIMU-9-Ver1.png)
+
 The data come from the MiniIMU9 Ver 1 from [Pololu](http://www.pololu.com). The IMU has:
 
 * L3G4200D 3-axis gyro
 * LSM303DLM 3-axis accelerometer and 3-axis magnetometer
+
+## Digital Filter
 
 The node currently grabs IMU data at *XX* Hz and filters it with a Chebyshev Type II
 Infinite Impulse Response (IIR) filter. The Type II has a flat pass band response and a 
@@ -29,20 +35,22 @@ ripple in the stop band. The filter is designed for:
 * Stop band Attenuation: 60 dB
 * Order: 5
 
-The filter is implemeted as:
+The filter is implemented as:
 
 ![image](http://i1268.photobucket.com/albums/jj568/mars_university/blog/filter-direct.png)
 
 ## Octave
 
 In the octave directory are several m-files used to design the IIR filter. From the
-Octave commandline type:
+Octave command line type:
 
 1. load_imu
-2. makefilter
+2. imu_filter
 
 This will load the data from test.txt which is just a csv file. Then the the order of 
 the filter is determined and the filter is designed.
+
+![filter_response]()
 
 ## Command Line
 
@@ -81,13 +89,13 @@ A QGLViewer that takes inputs from MiniIMU9 and displays the pose of the sensor.
 
 ## Command Line
 
-	rosrun viewer ahrs_view -c /my/imu
+	rosrun ahrs ahrs_view -c /my/imu
 
 * c: imu
 
 ## Example:
 
- 	rosrun viewer ahrs_view -c "/imu/data"
+ 	rosrun ahrs ahrs_view -c "/imu/data"
 
 ## To Do
 
