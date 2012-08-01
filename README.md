@@ -30,9 +30,9 @@ Infinite Impulse Response (IIR) filter. The Type II has a flat pass band respons
 ripple in the stop band. The filter is designed for:
 
 * Sample Freq: 20 Hz
-* Pass band: XX
-* Stop band: YY
-* Stop band Attenuation: 60 dB
+* Pass band: 0.8
+* Stop band: 0.9
+* Stop band Attenuation: 40 dB
 * Order: 5
 
 The filter is implemented as:
@@ -50,7 +50,7 @@ Octave command line type:
 This will load the data from test.txt which is just a csv file. Then the the order of 
 the filter is determined and the filter is designed.
 
-![filter_response]()
+![filter_response](http://i1268.photobucket.com/albums/jj568/mars_university/blog/filter-response.png)
 
 ## Command Line
 
