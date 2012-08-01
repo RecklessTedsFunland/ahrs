@@ -31,9 +31,7 @@ ripple in the stop band. The filter is designed for:
 
 The filter is implemeted as:
 
-![image](http://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Biquad_filter_DF-I.svg/500px-Biquad_filter_DF-I.svg.png)
-
-![image](http://i1268.photobucket.com/albums/jj568/mars_university/blog/710px-Biquad_filter_DF-Isvg.png)
+![image](http://i1268.photobucket.com/albums/jj568/mars_university/blog/filter-direct.png)
 
 ## Octave
 
