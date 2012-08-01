@@ -52,7 +52,7 @@ Octave command line type:
 This will load the data from test.txt which is just a csv file. Then the the order of 
 the filter is determined and the filter is designed.
 
-![filter_response](http://i1268.photobucket.com/albums/jj568/mars_university/blog/filter-response.png)
+![filter_response](http://i1268.photobucket.com/albums/jj568/mars_university/blog/filter-response.png "title")
 
 ## Command Line
 
@@ -107,4 +107,6 @@ real-time.
 # Test
 
 ![test](http://youtu.be/cxBDABA8aSM)
+
+<iframe width="420" height="315" src="http://www.youtube.com/embed/cxBDABA8aSM" frameborder="0" allowfullscreen></iframe>
 
