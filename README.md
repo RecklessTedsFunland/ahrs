@@ -19,7 +19,7 @@ The data come from the MiniIMU9 Ver 1 from [Pololu](http://www.pololu.com). The 
 * L3G4200D 3-axis gyro
 * LSM303DLM 3-axis accelerometer and 3-axis magnetometer
 
-The node currently grabs IMU data at *XXX* Hz and filters it with a Chebyshev Type II
+The node currently grabs IMU data at *XX* Hz and filters it with a Chebyshev Type II
 Infinite Impulse Response (IIR) filter. The Type II has a flat pass band response and a 
 ripple in the stop band. The filter is designed for:
 
@@ -32,6 +32,8 @@ ripple in the stop band. The filter is designed for:
 The filter is implemeted as:
 
 ![image](http://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Biquad_filter_DF-I.svg/500px-Biquad_filter_DF-I.svg.png)
+
+![image](http://i1268.photobucket.com/albums/jj568/mars_university/blog/710px-Biquad_filter_DF-Isvg.png)
 
 ## Octave
 
@@ -50,7 +52,7 @@ the filter is determined and the filter is designed.
 
 ## Subscribed Topics:
 
-** IMU Message **
+**IMU Message**
 
 "/imu" is the IMU message from the soccer robot package 
 ([Imu.msg](http://github.com/walchko/soccer/blob/master/msg/Imu.msg))

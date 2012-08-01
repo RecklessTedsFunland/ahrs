@@ -25,7 +25,9 @@
 #include <qapplication.h>
 #include <QGLViewer/qglviewer.h>
 
-
+/**
+ * Displays a simple 3D cube to represent the pose of the sensor.
+ */
 class Viewer : public QGLViewer {
 public:
 
