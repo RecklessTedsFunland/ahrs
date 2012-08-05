@@ -1,6 +1,9 @@
 #include <ros/ros.h>
 #include <soccer/IMU.h>
 
+#include <sensor_msgs/Imu.h>
+#include <geometry_msgs/Quaternion.h>
+
 #include <math.h>
 
 //---------------------------------------------------------------------------------------------------
@@ -188,7 +191,16 @@ public:
 	inline float roll(){ return 180.0/M_PI*atan2(2.0*q2*q3-2.0*q0*q1,2.0*q0*q0+2.0*q3*q3-1.0); }
 	inline float pitch(){ return -180.0/M_PI*asin(2.0*q1*q3+2.0*q0*q2); }
 	inline float yaw(){ return 180.0/M_PI*atan2(2.0*q1*q2-2.0*q0*q3,2.0*q0*q0+2.0*q1*q1-1.0); }
-
+	
+	geometry_msgs::Quaternion quaterion(){
+		geometry_msgs::Quaternion q;
+		q.x = q1;
+		q.y = q2;
+		q.z = q3;
+		q.w = q0;
+		
+		return q;
+	}
 
 protected:
 	//---------------------------------------------------------------------------------------------------
@@ -323,13 +335,23 @@ public:
 
     Filter2(ros::NodeHandle &n) : accel(), gyro(), mag(){
         debug = true;
-        imu_sub = n.subscribe("imu", 10, &Filter2::callback,this);
+        imu_sub = n.subscribe("imu", 100, &Filter2::callback,this);
+        imu_pub = n.advertise<sensor_msgs::Imu>("imu_out", 100);
         timer_old = ros::Time::now();
         timer = timer_old;
         
         accel.setBias(-0.021525, -0.004467, 0.031750);
         gyro.setBias(-0.026398, 0.002946, 0.021828);
         mag.setBias(-0.021525, -0.004467, 1.031750);
+        
+        imu_msg.angular_velocity_covariance[0] = 1.0;
+        imu_msg.angular_velocity_covariance[4] = 1.0;
+        imu_msg.angular_velocity_covariance[8] = 1.0;
+        
+        imu_msg.linear_acceleration_covariance[0] = 1.0;
+        imu_msg.linear_acceleration_covariance[4] = 1.0;
+        imu_msg.linear_acceleration_covariance[8] = 1.0;
+        
     }
 
     ~Filter2()
@@ -344,8 +366,10 @@ public:
 #if 0        
         ahrs.update(msg->gyros.x,msg->gyros.y,msg->gyros.z,
         			msg->accels.x,msg->accels.y,msg->accels.z,
-        			msg->mags.x,msg->mags.y,msg->mags.z,dt);
+        			msg->mags.x,msg->mags.y,msg->mags.z,dt);		
+        ahrs.print();
 #else
+		// filter noisy data before putting into AHRS
 		double ax = msg->accels.x;
 		double ay = msg->accels.y;
 		double az = msg->accels.z;
@@ -362,15 +386,31 @@ public:
 		mag.filter(mx,my,mz);
 		
 		ahrs.update(gx,gy,gz, ax,ay,az, mx,my,mz, dt);
-#endif        					
-        ahrs.print();
+		
+        imu_msg.angular_velocity.x = gx;
+        imu_msg.angular_velocity.y = gy;
+        imu_msg.angular_velocity.z = gz;
+        
+        imu_msg.linear_acceleration.x = ax;
+        imu_msg.linear_acceleration.y = ay;
+        imu_msg.linear_acceleration.z = az;
+        
+        imu_msg.orientation = ahrs.quaterion();
+        imu_pub.publish(imu_msg);
+#endif        			
         
     }
     
     ros::NodeHandle node;
     ros::Subscriber imu_sub;
+    ros::Publisher imu_pub;
     ros::Time timer;   //general purpose timer
     ros::Time timer_old;
+    sensor_msgs::Imu imu_msg;
+    
+    //double angular_velocity_covariance[9];
+    //double linear_acceleration_covariance[9];
+    
     bool debug;
     TriAxisFilter accel, gyro, mag;
     AHRS ahrs;

@@ -10,6 +10,8 @@
   <url>http://ros.org/wiki/MiniIMU9</url>
   <depend package="roscpp"/>
   <depend package="soccer"/>
+  <depend package="sensor_msgs"/>
+  <depend package="geometry_msgs"/>
 
 </package>
 

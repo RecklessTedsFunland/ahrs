@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+include($ENV{ROS_ROOT}/core/rosbuild/FindPkgConfig.cmake)
 
 # Set the build type.  Options are:
 #  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
@@ -29,4 +30,24 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
+################ IMU Node #########################
 rosbuild_add_executable(ahrs src/ahrs.cpp)
+
+
+################ IMU Viewer #########################
+# Qt
+#find_package(Qt4 COMPONENTS QtCore QtGui QtOpenGL REQUIRED)
+pkg_check_modules(QT REQUIRED QtXml QtCore QtGui QtOpenGL)
+if(QT_FOUND)
+	message("======== FOUND Qt ${QT_VERSION} =============")
+	#include(${QT_USE_FILE})
+	add_definitions(-DQT_NO_KEYWORDS)
+	include_directories(${QT_INCLUDE_DIRS} /usr/local/Cellar/qt/4.8.0/include/QtXml)
+	link_directories(${QT_LIBRARY_DIRS})
+	message("--${QT_INCLUDE_DIRS}")
+	message("--${QT_LIBS}")
+endif(QT_FOUND)
+
+rosbuild_add_executable(ahrs_viewer src/ahrs_viewer.cpp)
+target_link_libraries(ahrs_viewer ${OPENGL_LIBRARY} ${QT_LIBRARIES})
+set(CMAKE_EXE_LINKER_FLAGS "-framework OpenGL -F/usr/local/Cellar/libqglviewer/2.3.15 -framework QGLViewer -F/usr/local/Cellar/qt/4.8.0/lib -framework QtCore -framework QtOpenGL -framework QtXml -framework QtGui")

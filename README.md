@@ -60,21 +60,20 @@ the filter is determined and the filter is designed.
 
 ## Subscribed Topics:
 
-**IMU Message**
-
-"/imu" is the IMU message from the soccer robot package 
+**imu** is the IMU message from the soccer robot package 
 ([Imu.msg](http://github.com/walchko/soccer/blob/master/msg/Imu.msg))
 
 
-#### Published Topics: 
+## Published Topics: 
 
-**something:** 
+**imu_out** ([sensor_msgs/Imu](http://www.ros.org/doc/api/sensor_msgs/html/msg/Imu.html)) 
 
-"/imu/something" some data
+Output is the filtered data with the magnetometer, gyros and accelerometers
+data fused into an orientation quaternion 
 
 ## To Do
 
-* optimize for a certain Hz
+* optimize for a specific sampling rate (Hz)
 * clean up octave scripts
 
 # Viewer Node: IMU Viewer
@@ -87,27 +86,20 @@ the filter is determined and the filter is designed.
 
 **Website:** http://github.com/walchko/MiniIMU9/viewer
 
-A QGLViewer that takes inputs from MiniIMU9 and displays the pose of the sensor in
-real-time.
+![window]()
+
+A [QGLViewer](www.libqglviewer.com) that takes inputs from MiniIMU9 and displays 
+the pose of the sensor in real-time.
+
+## Subscribed Topics
+
+**imu_out** ([sensor_msgs/Imu](http://www.ros.org/doc/api/sensor_msgs/html/msg/Imu.html)) 
 
 ## Command Line
 
 	rosrun ahrs ahrs_view
 
-## Example:
-
- 	rosrun ahrs ahrs_view
- 	
-![imu_pose_image]()
-
 ## To Do
 
-* something
+* Still just getting this working, need to get things working completely
 
-# Test
-
-![test](http://youtu.be/cxBDABA8aSM)
-
-<iframe width="420" height="315" src="http://www.youtube.com/embed/cxBDABA8aSM" frameborder="0" allowfullscreen></iframe>
-
-<object width="480" height="385"><param name="movie" value="http://www.youtube.com/v/jJECepNeCJ0&amp;hl=en_US&amp;fs=1"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/jJECepNeCJ0&amp;hl=en_US&amp;fs=1" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="480" height="385"></embed></object>
