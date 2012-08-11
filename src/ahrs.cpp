@@ -1,3 +1,5 @@
+// see https://github.com/walchko/ahrs for more info.
+
 #include <ros/ros.h>
 #include <soccer/IMU.h>
 
@@ -5,14 +7,40 @@
 #include <geometry_msgs/Quaternion.h>
 
 #include <math.h>
+#include <iostream>
 
-//---------------------------------------------------------------------------------------------------
+// command line options
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+
+//-------------------------------------------------------------------------------------
 // AHRS algorithm update
+// Note: [q0 q1 q2 q3] = [w x y z]
+// beta = sqrt(3/4)*wb
+// wb: represents the estimated mean zero gyroscope measurement error of each axis 
+// gamma = sqrt(3/4)*wc
+// wc: represents the estimated rate of gyroscope bias drift in each axis
+//-------------------------------------------------------------------------------------
 class AHRS {
 public:
 	AHRS(){
 		q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;
-		beta = 0.1;
+		//beta = 0.1;
+		beta = sqrt(3.0/4.0)*M_PI/180.0*5.0; // 5 degrees of measurement error
+		useMags = true;
+	}
+	
+	void setUseMags(bool b){
+		useMags = b;
+	}
+	
+	void setBeta(float b){
+		beta = b;
+	}
+	
+	void reset(void){
+		q0 = 1.0f; 
+		q1 = q2 = q3 = 0.0f;
 	}
 	
 	void update(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float dt) {
@@ -22,6 +50,11 @@ public:
 		float hx, hy;
 		float _2q0mx, _2q0my, _2q0mz, _2q1mx, _2bx, _2bz, _4bx, _4bz, _2q0, _2q1, _2q2, _2q3, _2q0q2, _2q2q3, q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
 	
+		if(!useMags){
+			update(gx, gy, gz, ax, ay, az, dt);
+			return;
+		}
+		
 		// Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)
 		if((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f)) {
 			ROS_INFO("Warning: MadgwickAHRSupdate() has bad magnetometer values");
@@ -112,7 +145,7 @@ public:
 		q3 *= recipNorm;
 	}
 	
-	//---------------------------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------------
 	// IMU algorithm update	
 	void update(float gx, float gy, float gz, float ax, float ay, float az, float dt) {
 		float recipNorm;
@@ -182,11 +215,11 @@ public:
 		q3 *= recipNorm;
 	}
 	
-	void print(){
-		ROS_INFO_THROTTLE(0.1,"RPY: %2.2f %2.2f %2.2f",roll(),pitch(),yaw());
-	}
+	//void print(){
+	//	ROS_INFO_THROTTLE(0.1,"RPY: %2.2f %2.2f %2.2f",roll(),pitch(),yaw());
+	//}
 	
-	inline float normQ(){ return invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3); }
+	inline float normQ(){ return sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3); }
 
 	inline float roll(){ return 180.0/M_PI*atan2(2.0*q2*q3-2.0*q0*q1,2.0*q0*q0+2.0*q3*q3-1.0); }
 	inline float pitch(){ return -180.0/M_PI*asin(2.0*q1*q3+2.0*q0*q2); }
@@ -203,7 +236,7 @@ public:
 	}
 
 protected:
-	//---------------------------------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------
 	// Fast inverse square-root
 	// See: http://en.wikipedia.org/wiki/Fast_inverse_square_root
 	
@@ -218,7 +251,8 @@ protected:
 	}
 	
 	float q0,q1,q2,q3;
-	float beta;
+	float beta; 
+	bool useMags;
 };
 
 
@@ -289,6 +323,7 @@ protected:
 /**
  * Collection of 3 DigitalFilters to correct for noise and bias of a triple axis
  * sensor.
+ * The digital filters can be removed if desired, just leaving the bias corrections.
  */
 class TriAxisFilter {
 public:
@@ -299,6 +334,8 @@ public:
         x.init(b,a);
         y.init(b,a);
         z.init(b,a);
+        
+        useFilter = true;
 	}
 	
 	void setBias(double xx, double yy, double zz){
@@ -308,33 +345,38 @@ public:
 	}
 	
 	void filter(double& xx, double& yy, double& zz){
-#if 1
-		xx = x.filter(xx - x_bias);
-		yy = y.filter(yy - y_bias);
-		zz = z.filter(zz - z_bias);
-#else
-		xx = (xx - x_bias);
-		yy = (yy - y_bias);
-		zz = (zz - z_bias);
-		
-#endif
+		if(useFilter){
+			xx = x.filter(xx - x_bias);
+			yy = y.filter(yy - y_bias);
+			zz = z.filter(zz - z_bias);
+		}
+		else {
+			xx = (xx - x_bias);
+			yy = (yy - y_bias);
+			zz = (zz - z_bias);
+		}
+	}
+	
+	void setUseFilter(bool b){
+		useFilter = b;
 	}
 	
 protected:
 	double x_bias, y_bias, z_bias;
 	DigitalFilter x, y, z;
+	bool useFilter;
 };
 
 
 //////////////////////////////////////////////////////////
 
 
-class Filter2 {
+class Filter2 : public AHRS {
 
 public:
 
     Filter2(ros::NodeHandle &n) : accel(), gyro(), mag(){
-        debug = true;
+        debug = false;
         imu_sub = n.subscribe("imu", 100, &Filter2::callback,this);
         imu_pub = n.advertise<sensor_msgs::Imu>("imu_out", 100);
         timer_old = ros::Time::now();
@@ -359,7 +401,12 @@ public:
 
     }
     
+    void setDebug(bool b){
+    	debug = b;
+    }
+    
     void callback(const soccer::Imu::ConstPtr& msg) {
+    	ROS_INFO_ONCE("*** AHRS started, beta = %f ***",beta);
     	timer_old = timer;
         timer = ros::Time::now(); // = msg->header.stamp;
         double dt = (timer-timer_old).toSec();
@@ -385,7 +432,7 @@ public:
 		double mz = msg->mags.z;
 		mag.filter(mx,my,mz);
 		
-		ahrs.update(gx,gy,gz, ax,ay,az, mx,my,mz, dt);
+		update(gx,gy,gz, ax,ay,az, mx,my,mz, dt);
 		
         imu_msg.angular_velocity.x = gx;
         imu_msg.angular_velocity.y = gy;
@@ -395,9 +442,10 @@ public:
         imu_msg.linear_acceleration.y = ay;
         imu_msg.linear_acceleration.z = az;
         
-        imu_msg.orientation = ahrs.quaterion();
+        imu_msg.orientation = quaterion();
         imu_pub.publish(imu_msg);
-#endif        			
+#endif        
+		if(debug) ROS_INFO_THROTTLE(3,"RPY: %2.2f %2.2f %2.2f",roll(),pitch(),yaw());		
         
     }
     
@@ -413,14 +461,58 @@ public:
     
     bool debug;
     TriAxisFilter accel, gyro, mag;
-    AHRS ahrs;
+    //AHRS ahrs;
 };
+
+
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "filter");
+    ros::init(argc, argv, "ahrs");
     ros::NodeHandle n;
+    
     Filter2 filter(n);
+    
+    try {
+        po::options_description desc("Allowed options");
+        desc.add_options()
+            ("help", "produce help message")
+            ("no-mags", "turns off use of magnetometers")
+            ("no-filter","turns off use of IIR data filtering")
+            ("debug","prints debug info to screen")
+            ("beta", po::value<float>(), "sets Beta value for gradient decent")
+            ;
+        po::variables_map vm;       
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);   
+        
+        if (vm.count("help")) {
+            std::cout << desc << "\n";
+            return 1;
+        }
+        if (vm.count("no-mags")){
+        	filter.setUseMags(false);
+        }
+        
+        if (vm.count("no-filter")){
+        	//filter.setUseFilter(false);
+        }
+        
+        if (vm.count("debug")){
+        	filter.setDebug(true);
+        }
+        
+        if (vm.count("beta")){
+        	filter.setBeta( vm["beta"].as<float>() );
+        }
+    }
+    catch(boost::exception& e) {
+        //std::cerr << "AHRS Error " /*<< e.what()*/ << "\n";
+        ROS_ERROR("AHRS");
+        return 1;
+    }
+    
+    
     ros::spin();
     return 0;
 }

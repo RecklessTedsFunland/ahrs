@@ -14,6 +14,13 @@ This implements AHRS code written by [Midgwick](http://github.com/walchko/ahrs/t
 readings from accelerometers, gyros, and magnetometers and calculate the pose (roll,
 pitch, and yaw) of the sensor.
 
+The node does:
+
+* Digital noise filtering
+* Bias correction
+* Calculates the roll, pitch, and yaw
+* Calculates the compass heading (yaw is wrt North)
+
 ## IMU
 
 ![IMU](http://i1268.photobucket.com/albums/jj568/mars_university/blog/MinIMU-9-Ver1.png)
@@ -56,12 +63,21 @@ the filter is determined and the filter is designed.
 
 ## Command Line
 
-	rosrun ahrs ahrs
+	rosrun ahrs ahrs --no-filter --no-mags
+
+**no-filter** Turns off the IIR filter
+
+**no-mags** Turns off the magnetometers when determining the heading. This is useful when 
+the AHRS magnetometers have not been compensated for hard iron distortion or the 
+magnetic fields from motors are interfering. The AHRS will also no longer have a sense
+where magnetic North is, so yaw will be reported w.r.t. some initial arbitrary heading. 
 
 ## Subscribed Topics:
 
 **imu** is the IMU message from the soccer robot package 
 ([Imu.msg](http://github.com/walchko/soccer/blob/master/msg/Imu.msg))
+
+**imu_reset** (bool) resets the AHRS when true sent
 
 
 ## Published Topics: 
@@ -75,6 +91,14 @@ data fused into an orientation quaternion
 
 * optimize for a specific sampling rate (Hz)
 * clean up octave scripts
+* turn IIR filter on or off
+* turn off and on the magnetometers
+* have it run through a scripted routine where it out puts accel data when the 
+IMU is rotated through 6 different orientations. Routine displays a count down (
+3,2,1) to re-orient the IMU and then it averages 1 min of data in that orientation
+before the next count down begins. The average accel data is printed to screen.
+
+------------------------------------------------------------------------------------
 
 # Viewer Node: IMU Viewer
 
@@ -86,10 +110,17 @@ data fused into an orientation quaternion
 
 **Website:** http://github.com/walchko/MiniIMU9/viewer
 
-![window]()
+![window](http://i1268.photobucket.com/albums/jj568/mars_university/ahrs.png)
 
 A [QGLViewer](www.libqglviewer.com) that takes inputs from MiniIMU9 and displays 
-the pose of the sensor in real-time.
+the pose of the sensor in real-time. The viewer window takes the following
+input commands:
+
+* ESC: close window
+* Mouse Drag: spin
+* Mouse Scroll: zoom in and out
+
+Inertial axis with a cube representing the IMU orientation.
 
 ## Subscribed Topics
 

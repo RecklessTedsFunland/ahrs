@@ -32,7 +32,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 ################ IMU Node #########################
 rosbuild_add_executable(ahrs src/ahrs.cpp)
-
+rosbuild_link_boost(ahrs program_options)
 
 ################ IMU Viewer #########################
 # Qt
