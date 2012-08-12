@@ -2,7 +2,7 @@
  *
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2011, Kevin J. Walchko.
+ *  Copyright (c) 2012, Kevin J. Walchko.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without

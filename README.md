@@ -70,7 +70,13 @@ the filter is determined and the filter is designed.
 **no-mags** Turns off the magnetometers when determining the heading. This is useful when 
 the AHRS magnetometers have not been compensated for hard iron distortion or the 
 magnetic fields from motors are interfering. The AHRS will also no longer have a sense
-where magnetic North is, so yaw will be reported w.r.t. some initial arbitrary heading. 
+where magnetic North is, so yaw will be reported w.r.t. some initial arbitrary heading.
+
+**debug** Print debug values to screen
+
+**beta** Set the beta value 
+
+**help** Print help
 
 ## Subscribed Topics:
 

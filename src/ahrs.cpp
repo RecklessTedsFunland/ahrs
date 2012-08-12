@@ -285,7 +285,7 @@ public:
 	}
 	
 	/**
-	 * Fill coefficients
+	 * Fill IIR coefficients
 	 */
 	void init(double *bb, double *aa){
 		
@@ -299,6 +299,7 @@ public:
 	
 	/**
 	 * Difference filter
+	 * Uses 2 circular buffers, on each for x and y.
 	 */
 	double filter(double in){
 		x_cb.push_front(in);
@@ -371,13 +372,13 @@ protected:
 //////////////////////////////////////////////////////////
 
 
-class Filter2 : public AHRS {
+class AHRS_Filter : public AHRS {
 
 public:
 
-    Filter2(ros::NodeHandle &n) : accel(), gyro(), mag(){
+    AHRS_Filter(ros::NodeHandle &n) : accel(), gyro(), mag(){
         debug = false;
-        imu_sub = n.subscribe("imu", 100, &Filter2::callback,this);
+        imu_sub = n.subscribe("imu", 100, &AHRS_Filter::callback,this);
         imu_pub = n.advertise<sensor_msgs::Imu>("imu_out", 100);
         timer_old = ros::Time::now();
         timer = timer_old;
@@ -396,7 +397,7 @@ public:
         
     }
 
-    ~Filter2()
+    ~AHRS_Filter()
     {
 
     }
@@ -407,14 +408,15 @@ public:
     
     void callback(const soccer::Imu::ConstPtr& msg) {
     	ROS_INFO_ONCE("*** AHRS started, beta = %f ***",beta);
+    	
     	timer_old = timer;
         timer = ros::Time::now(); // = msg->header.stamp;
         double dt = (timer-timer_old).toSec();
 #if 0        
-        ahrs.update(msg->gyros.x,msg->gyros.y,msg->gyros.z,
+        update(msg->gyros.x,msg->gyros.y,msg->gyros.z,
         			msg->accels.x,msg->accels.y,msg->accels.z,
         			msg->mags.x,msg->mags.y,msg->mags.z,dt);		
-        ahrs.print();
+        print();
 #else
 		// filter noisy data before putting into AHRS
 		double ax = msg->accels.x;
@@ -471,7 +473,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "ahrs");
     ros::NodeHandle n;
     
-    Filter2 filter(n);
+    AHRS_Filter filter(n);
     
     try {
         po::options_description desc("Allowed options");
@@ -487,9 +489,12 @@ int main(int argc, char** argv)
         po::notify(vm);   
         
         if (vm.count("help")) {
+        	std::cout << "rosrun ahrs ahrs [option] \n";
+        	std::cout << "    default topic in [imu] out [imu_out] \n";
             std::cout << desc << "\n";
             return 1;
         }
+        
         if (vm.count("no-mags")){
         	filter.setUseMags(false);
         }
