@@ -125,7 +125,7 @@ protected :
 		glEnd();
 	}
 	
-	
+	/*
 	float roll(const geometry_msgs::Quaternion& q){ 
 		float q0,q1,q2,q3;
 		q0 = q.w;
@@ -152,7 +152,7 @@ protected :
 		q3 = q.z;
 		return 180.0/M_PI*atan2(2.0*q1*q2-2.0*q0*q3,2.0*q0*q0+2.0*q1*q1-1.0); 
 	}
-	
+	*/
 	geometry_msgs::Vector3 rollPitchYaw(const geometry_msgs::Quaternion& q){ 
 		geometry_msgs::Vector3 v;
 		double q0,q1,q2,q3;
@@ -160,23 +160,31 @@ protected :
 		q1 = q.x;
 		q2 = q.y;
 		q3 = q.z;
-		
+#if 0		
 		v.x = 180.0/M_PI*atan2(2.0*q2*q3-2.0*q0*q1,2.0*q0*q0+2.0*q3*q3-1.0); 
 		v.y = -180.0/M_PI*asin(2.0*q1*q3+2.0*q0*q2);
 		v.z = 180.0/M_PI*atan2(2.0*q1*q2-2.0*q0*q3,2.0*q0*q0+2.0*q1*q1-1.0);
-		
+#else		
+		v.x = 180.0/M_PI*atan2(2.0*(q0*q1+q2*q3),1.0-2.0*(q1*q1+q2*q2));
+		v.y = 180.0/M_PI*asin(2.0*(q0*q2-q3*q1));
+		v.z = 180.0/M_PI*atan2(2.0*(q0*q3+q1*q2),1.0-2.0*(q2*q2+q3*q3));
+#endif		
 		return v;
 	}
 
   virtual void draw(){
 
+    geometry_msgs::Vector3 v = rollPitchYaw(q);
     glPushMatrix ();
-       glRotatef(angle*180.0/M_PI,x,y,z);
+       //glRotatef(angle*180.0/M_PI,x,y,z);
+       glRotatef(v.z,0,0,1);
+       glRotatef(v.y,0,1,0);
+       glRotatef(v.x,1,0,0);
        drawAxis(0.5);
        Draw_Box (0.2);
     glPopMatrix ();
     
-    geometry_msgs::Vector3 v = rollPitchYaw(q);
+    //geometry_msgs::Vector3 v = rollPitchYaw(q);
     char buff[256];
     sprintf(buff,"Roll: %3.2f Pitch: %3.2f Yaw: %3.2f ",v.x,v.y,v.z);
     //sprintf(buff,"Roll: %3.2f \nPitch: %3.2f \nYaw: %3.2f ",roll(q),pitch(q),yaw(q));
