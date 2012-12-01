@@ -5,16 +5,35 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Quaternion.h>
+
 // Soccer ------------------
 #include <soccer/IMU.h>
 
 // C++ ---------------------
 #include <math.h>
 #include <iostream>
+#include <fstream>
+
+#include <yaml-cpp/yaml.h>
 
 // Boost -------------------
 #include <boost/program_options.hpp>     // command line options
 namespace po = boost::program_options;
+
+// is there something else I can use instead?
+class Vec3 {
+public:
+   double x, y, z;
+};
+
+class Sensor {
+public:
+	std::string name;
+	double range;
+	Vec3 bias;
+	Vec3 cov;
+};
+
 
 //-------------------------------------------------------------------------------------
 // AHRS algorithm update
@@ -230,11 +249,12 @@ public:
 	
 	//inline double normQ(){ return sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3); }
 
-	/*
-	inline double roll(){ return 180.0/M_PI*atan2(2.0*q2*q3-2.0*q0*q1,2.0*q0*q0+2.0*q3*q3-1.0); }
-	inline double pitch(){ return -180.0/M_PI*asin(2.0*q1*q3+2.0*q0*q2); }
-	inline double yaw(){ return 180.0/M_PI*atan2(2.0*q1*q2-2.0*q0*q3,2.0*q0*q0+2.0*q1*q1-1.0); }
-	*/
+	
+	// calc Euler, returns rads
+	inline double roll(){ return atan2(2.0*q2*q3-2.0*q0*q1,2.0*q0*q0+2.0*q3*q3-1.0); }
+	inline double pitch(){ return -asin(2.0*q1*q3+2.0*q0*q2); }
+	inline double yaw(){ return atan2(2.0*q1*q2-2.0*q0*q3,2.0*q0*q0+2.0*q1*q1-1.0); }
+	
 	
 	geometry_msgs::Quaternion quaterion(){
 		geometry_msgs::Quaternion q;
@@ -270,27 +290,23 @@ protected:
 	bool useMags;
 };
 
-
+/**
+ * ROS wrapper for the above AHRS class. It handles subscriptions and publication of 
+ * of ROS messages. 
+ */
 class AHRS_Filter : public AHRS {
 
 public:
+	enum sensor_names {IMU_ACCELS, IMU_GYROS, IMU_MAGS};
 
     AHRS_Filter(ros::NodeHandle &n) {
         debug = false;
+        digitalCompass = true;
+        
         imu_sub = n.subscribe("imu", 100, &AHRS_Filter::callback,this);
         imu_pub = n.advertise<sensor_msgs::Imu>("imu_out", 100);
         timer_old = ros::Time::now();
         timer = timer_old;
-        
-        //read yaml file with bias, errors, etc and fill these values below
-        
-        //accel.setBias(-0.021525, -0.004467, 0.031750);
-        //gyro.setBias(-0.026398, 0.002946, 0.021828);
-        //mag.setBias(-0.021525, -0.004467, 1.031750);
-        
-        //gyro.x_bias *= M_PI/180.0;
-        //gyro.y_bias *= M_PI/180.0;
-        //gyro.z_bias *= M_PI/180.0;
         
         imu_msg.angular_velocity_covariance[0] = 1.0;
         imu_msg.angular_velocity_covariance[4] = 1.0;
@@ -311,10 +327,62 @@ public:
     	debug = b;
     }
     
-    void setUseFilter(bool b){
-    	//accel.setUseFilter(b);
-    	//gyro.setUseFilter(b);
-    	//mag.setUseFilter(b);
+    void setSensor(int which, Sensor& s){
+    	switch(which){
+    		case IMU_ACCELS:
+    			accel_bias[0] = s.bias.x;
+    			accel_bias[1] = s.bias.y;
+    			accel_bias[2] = s.bias.z;
+    			
+				imu_msg.linear_acceleration_covariance[0] = s.cov.x;
+				imu_msg.linear_acceleration_covariance[4] = s.cov.y;
+				imu_msg.linear_acceleration_covariance[8] = s.cov.z;
+    			break;
+    		case IMU_GYROS:
+    			gyro_bias[0] = s.bias.x;
+    			gyro_bias[1] = s.bias.y;
+    			gyro_bias[2] = s.bias.z;
+    			
+				imu_msg.angular_velocity_covariance[0] = s.cov.x;
+				imu_msg.angular_velocity_covariance[4] = s.cov.y;
+				imu_msg.angular_velocity_covariance[8] = s.cov.z;
+    			break;
+    		case IMU_MAGS:
+    			mag_bias[0] = s.bias.x;
+    			mag_bias[1] = s.bias.y;
+    			mag_bias[2] = s.bias.z;
+    			break;
+    	}
+    }
+    
+    // from "tilt compensated compass.pdf" (LSM303DLH tech note)
+    // calculate heading from magnetometers and return heading in degrees.
+    double heading(void){
+    	double heading = 0.0;
+    	
+    	double norm = sqrt(mx*mx+my*my+mz*mz);
+    	double mx1 = mx/norm;
+    	double my1 = my/norm;
+    	double mz1 = mz/norm;
+    	
+    	double r = roll(); // roll
+    	double g = pitch(); // pitch
+    	
+    	double mx2 = mx1*cos(r)+mz1*sin(r);
+    	double my2 = mx1*sin(g)*sin(r)+my1*cos(g)-mz1*sin(g)*sin(r);
+    	double mz2 = -mx1*cos(g)*sin(r)+my1*sin(g)+mz1*cos(g)*cos(r);
+    	
+    	heading = atan2(my2,mx2); // dboule check this
+    	
+    	if(mx2 > 0.0 && my2 >= 0.0); // all good 
+    	else if( mx2 < 0.0) heading = M_PI+heading;
+    	else if(mx2>0.0 && my2 <=0.0) heading = 2.0*M_PI+heading;
+    	else if(mx2 == 0.0 && my2 < 0.0) heading = M_PI/2.0; // 90 deg
+    	else if(mx2 == 0.0 && my2 > 0.0) heading = 1.5*M_PI; // 270 deg
+    	
+    	//ROS_INF("heading: %f",heading);
+    	
+    	return 180.0/M_PI*heading;
     }
     
     void callback(const soccer::Imu::ConstPtr& msg) {
@@ -327,26 +395,33 @@ public:
         timer = ros::Time::now(); // = msg->header.stamp;
         double dt = (timer-timer_old).toSec();
 
-		double ax = msg->accels.x;
-		double ay = msg->accels.y;
-		double az = msg->accels.z;
+		// need to correct for biases
+		// somehow should handle a range change??? 
+		// i.e., 250 dps -> 500 dps or g's -> m/sec^2
+		double ax = -(msg->accels.x - accel_bias[0]);
+		double ay = -(msg->accels.y - accel_bias[1]);
+		double az = msg->accels.z - accel_bias[2];
 		
-		double gx = msg->gyros.x;
-		double gy = msg->gyros.y;
-		double gz = msg->gyros.z;
+		double gx = -(msg->gyros.x - gyro_bias[0]);
+		double gy = -(msg->gyros.y - gyro_bias[1]);
+		double gz = msg->gyros.z - gyro_bias[2];
 		
 		if(useMags){
-			double mx = msg->mags.x;
-			double my = msg->mags.y;
-			double mz = msg->mags.z;
+			mx = -(msg->mags.x - mag_bias[0]);
+			my = -(msg->mags.y - mag_bias[1]);
+			mz = msg->mags.z - mag_bias[2];
 			
 			update(gx,gy,gz, ax,ay,az, mx,my,mz, dt);
+			
+			//if(digitalCompass) ROS_INFO("Heading: %3.1f deg",heading());
 		}
 		else {
 			update(gx,gy,gz, ax,ay,az, dt);
 		}
 		
 		// what about the message header time here too?
+		imu_msg.header.stamp = ros::Time::now();
+		
         imu_msg.angular_velocity.x = gx;
         imu_msg.angular_velocity.y = gy;
         imu_msg.angular_velocity.z = gz;
@@ -363,14 +438,81 @@ public:
     
     ros::NodeHandle node;
     ros::Subscriber imu_sub;
-    ros::Publisher imu_pub;
-    ros::Time timer;   //general purpose timer
-    ros::Time timer_old;
-    sensor_msgs::Imu imu_msg;
+    ros::Publisher imu_pub; //
+    ros::Time timer;   // current time
+    ros::Time timer_old; // last time step time
+    sensor_msgs::Imu imu_msg; //
+    
+    double accel_bias[3];
+    double gyro_bias[3];
+    double mag_bias[3];
+    
+    double mx, my, mz;
     
     bool debug;
+    bool digitalCompass;
 };
 
+
+////////////////// YAML File \\\\\\\\\\\\\\\\\\\\\\
+
+void printSensor(const Sensor& sensor){
+	std::cout << "----- " << sensor.name << "----------" << std::endl;
+	std::cout << sensor.bias.x << " " << sensor.bias.y << " " << sensor.bias.z << std::endl;
+	std::cout << sensor.cov.x << " " << sensor.cov.y << " " << sensor.cov.z << std::endl;
+	std::cout << sensor.range << std::endl;
+} 
+
+void operator >> (const YAML::Node& node, Vec3& v){
+	node[0] >> v.x;
+	node[1] >> v.y;
+	node[2] >> v.z;
+}
+
+void operator >> (const YAML::Node& node, Sensor& sensor){
+	node["name"] >> sensor.name;
+	node["bias"] >> sensor.bias;
+	node["cov"] >> sensor.cov;
+	node["range"] >> sensor.range;
+}
+
+bool loadConfigFile(AHRS_Filter& filter, std::string file){
+	
+    try {
+		std::ifstream fin(file.c_str());
+		YAML::Parser parser(fin);
+		YAML::Node doc;
+		parser.GetNextDocument(doc);
+		
+		if(doc.size() == 0) {
+			return false;
+		}
+		
+		for(unsigned i=0;i<doc.size();++i){
+			Sensor sensor;
+			doc[i] >> sensor;
+			
+			if(!sensor.name.compare("accels")){
+				filter.setSensor(AHRS_Filter::IMU_ACCELS,sensor);
+				//printSensor(sensor);
+			}
+			if(!sensor.name.compare("gyros")){
+				filter.setSensor(AHRS_Filter::IMU_GYROS,sensor);
+			}
+			if(!sensor.name.compare("mags")){
+				filter.setSensor(AHRS_Filter::IMU_MAGS,sensor);
+			}
+			
+		}
+	} 
+	catch(YAML::ParserException& e) {
+		std::cout << e.what() << std::endl;
+	}	
+	
+	return true;
+}
+
+///////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 
 int main(int argc, char** argv)
@@ -379,15 +521,20 @@ int main(int argc, char** argv)
     ros::NodeHandle n;
     
     AHRS_Filter filter(n);
-    
+    /*
+    if(loadConfigFile(filter,"imu.yaml") == false){
+		ROS_ERROR("Couldn't read file ... exiting"); 
+		exit(0);
+	}
+    */
     try {
         po::options_description desc("Allowed options");
         desc.add_options()
             ("help", "produce help message")
             ("no-mags", "turns off use of magnetometers")
-            ("no-filter","turns off use of IIR data filtering")
             ("debug","prints debug info to screen")
             ("beta", po::value<double>(), "sets Beta value for gradient decent")
+            ("config", po::value<std::string>(), "sets configuration of IMU default sensor values")
             ;
         po::variables_map vm;       
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -404,10 +551,6 @@ int main(int argc, char** argv)
         	filter.setUseMags(false);
         }
         
-        if (vm.count("no-filter")){
-        	filter.setUseFilter(false);
-        }
-        
         if (vm.count("debug")){
         	filter.setDebug(true);
         }
@@ -415,12 +558,22 @@ int main(int argc, char** argv)
         if (vm.count("beta")){
         	filter.setBeta( vm["beta"].as<double>() );
         }
+        
+        if (vm.count("config")){
+        	std::string file = vm["config"].as<std::string>();
+			if(loadConfigFile(filter, file) == false){
+				ROS_ERROR("Couldn't read file"); 
+				exit(0);
+			}
+        }
     }
     catch(boost::exception& e) {
         //std::cerr << "AHRS Error " /*<< e.what()*/ << "\n";
         ROS_ERROR("AHRS");
         return 1;
     }
+    
+    //exit(0);
     
     ros::spin();
     return 0;

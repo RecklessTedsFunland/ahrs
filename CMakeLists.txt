@@ -31,8 +31,15 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(example ${PROJECT_NAME})
 
 ################ IMU Node #########################
+pkg_check_modules(YAML yaml-cpp)
+if(YAML_FOUND)
+	message("==== Found Yaml-Cpp ${YAML_VERSION} ====")
+	include_directories(${YAML_INCLUDE_DIRS})
+	link_directories(${YAML_LIBRARY_DIRS})
+endif(YAML_FOUND)
 rosbuild_add_executable(ahrs src/ahrs.cpp)
 rosbuild_link_boost(ahrs program_options)
+target_link_libraries(ahrs ${YAML_LIBRARIES})
 
 ################ IMU Node #########################
 #rosbuild_add_executable(ahrs2 src/ahrs2.cpp)
