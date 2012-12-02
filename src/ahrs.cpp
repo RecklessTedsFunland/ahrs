@@ -6,8 +6,8 @@
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Quaternion.h>
 
-// Soccer ------------------
-#include <soccer/IMU.h>
+// AHRS ------------------
+#include <ahrs/IMU.h>
 
 // C++ ---------------------
 #include <math.h>
@@ -385,7 +385,7 @@ public:
     	return 180.0/M_PI*heading;
     }
     
-    void callback(const soccer::Imu::ConstPtr& msg) {
+    void callback(const ahrs::Imu::ConstPtr& msg) {
     	ROS_INFO_ONCE("** AHRS: beta = %1.4f, Magnetometers[%s] **",
     		beta, 
     		(useMags ? "On" : "Off"));
