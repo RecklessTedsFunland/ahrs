@@ -20,16 +20,18 @@ generate_messages(DEPENDENCIES std_msgs geometry_msgs sensor_msgs)
    
 #include_directories(include ${catkin_INCLUDE_DIRS})
 
-################ IMU Node #########################
-pkg_check_modules(YAML yaml-cpp)
+################ YAML-CPP #########################
+pkg_check_modules(YAML REQUIRED yaml-cpp)
 if(YAML_FOUND)
 	message("==== Found Yaml-Cpp ${YAML_VERSION} ====")
 	include_directories(${YAML_INCLUDE_DIRS})
 	link_directories(${YAML_LIBRARY_DIRS})
 endif(YAML_FOUND)
+
+
+################ IMU Node #########################
 add_executable(ahrs src/ahrs.cpp)
 target_link_libraries(ahrs ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${YAML_LIBRARIES})
-
 
 
 ################ IMU Node #########################
@@ -54,7 +56,7 @@ target_link_libraries(ahrs ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${YAML_LIBRARI
 #set(CMAKE_EXE_LINKER_FLAGS "-framework OpenGL -F/usr/local/Cellar/libqglviewer/2.3.15 -framework QGLViewer -F/usr/local/Cellar/qt/4.8.0/lib -framework QtCore -framework QtOpenGL -framework QtXml -framework QtGui")
 
 
-#install(TARGETS ${PROJECT_NAME} ahrs ahrs_viewer)
+install(TARGETS ahrs RUNTIME DESTINATION bin) # ahrs_viewer)
 
 #install(DIRECTORY include/${PROJECT_NAME}/
 #   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

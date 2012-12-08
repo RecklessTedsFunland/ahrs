@@ -1,6 +1,4 @@
 .DS_Store
-build
-bin
 old
 Kalman.h
 kf.cpp
