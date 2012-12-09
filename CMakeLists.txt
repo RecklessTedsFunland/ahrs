@@ -40,23 +40,23 @@ target_link_libraries(ahrs ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${YAML_LIBRARI
 
 ################ IMU Viewer #########################
 # Qt
-#pkg_check_modules(QT REQUIRED QtXml QtCore QtGui QtOpenGL)
-#if(QT_FOUND)
-#	message("======== FOUND Qt ${QT_VERSION} =============")
-#	#include(${QT_USE_FILE})
-#	add_definitions(-DQT_NO_KEYWORDS)
-#	include_directories(${QT_INCLUDE_DIRS} /usr/local/Cellar/qt/4.8.0/include/QtXml)
-#	link_directories(${QT_LIBRARY_DIRS})
-#	message("--${QT_INCLUDE_DIRS}")
-#	message("--${QT_LIBS}")
-#endif(QT_FOUND)
+pkg_check_modules(QT REQUIRED QtXml QtCore QtGui QtOpenGL)
+if(QT_FOUND)
+	message("======== FOUND Qt ${QT_VERSION} =============")
+	add_definitions(-DQT_NO_KEYWORDS)
+	include_directories(${QT_INCLUDE_DIRS})
+	link_directories(${QT_LIBRARY_DIRS})
+	#message("Include: ${QT_INCLUDE_DIRS}")
+	#message("Libraries: ${QT_LIBRARIES} ${QT_LIBRARY_DIRS} ${QT_LIBS}")
+	#message("Libraries2: " pkg-config --libs QtXml QtCore QtGui QtOpenGL )
+endif(QT_FOUND)
 
-#add_executable(ahrs_viewer src/ahrs_viewer.cpp)
-#target_link_libraries(ahrs_viewer ${OPENGL_LIBRARY} ${QT_LIBRARIES})
-#set(CMAKE_EXE_LINKER_FLAGS "-framework OpenGL -F/usr/local/Cellar/libqglviewer/2.3.15 -framework QGLViewer -F/usr/local/Cellar/qt/4.8.0/lib -framework QtCore -framework QtOpenGL -framework QtXml -framework QtGui")
+add_executable(ahrs_viewer src/ahrs_viewer.cpp)
+target_link_libraries(ahrs_viewer ${catkin_LIBRARIES} ${OPENGL_LIBRARY} ${QT_LIBRARIES} )
+set(CMAKE_EXE_LINKER_FLAGS "-framework OpenGL -F/usr/local/Cellar/libqglviewer/2.3.17 -framework QGLViewer -F/usr/local/Cellar/qt/4.8.3/lib -framework QtCore -framework QtOpenGL -framework QtXml -framework QtGui")
+#set(CMAKE_EXE_LINKER_FLAGS "-framework OpenGL -F/usr/local/Cellar/libqglviewer/2.3.17  -framework QGLViewer")
 
-
-install(TARGETS ahrs RUNTIME DESTINATION bin) # ahrs_viewer)
+install(TARGETS ahrs ahrs_viewer RUNTIME DESTINATION bin) 
 
 #install(DIRECTORY include/${PROJECT_NAME}/
 #   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
