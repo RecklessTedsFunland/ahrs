@@ -303,6 +303,8 @@ public:
         debug = false;
         digitalCompass = true;
         
+        ROS_INFO("Subscribing: %s   Publishing: %s","[imu]","[imu_out]");
+        
         imu_sub = n.subscribe("imu", 100, &AHRS_Filter::callback,this);
         imu_pub = n.advertise<sensor_msgs::Imu>("imu_out", 100);
         timer_old = ros::Time::now();

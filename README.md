@@ -128,6 +128,15 @@ input commands:
 
 Inertial axis with a cube representing the IMU orientation.
 
+## Homebrew (OSX)
+
+When you install libqglviewer using homebrew, ensure you create (or update) the link
+manually to /Library/Frameworks:
+
+    sudo ln -s "/usr/local/Cellar/libqglviewer/VERSION/QGLViewer.framework" "/Library/Frameworks/QGLViewer.framework"
+
+Had some issues where the compiler was trying to link to an old version of the library.
+
 ## Subscribed Topics
 
 **imu_out** ([sensor_msgs/Imu](http://www.ros.org/doc/api/sensor_msgs/html/msg/Imu.html)) 

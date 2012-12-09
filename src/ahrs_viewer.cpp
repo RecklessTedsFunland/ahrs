@@ -84,7 +84,8 @@ const float XUP[3] = {1,0,0}, XUN[3] = {-1, 0, 0},
 class Viewer : public QGLViewer {
 public:
 
-	Viewer(ros::NodeHandle& n) {
+	Viewer(ros::NodeHandle& n){
+	    ROS_INFO("Subscribe: [%s]","imu_out");
 		sub = n.subscribe("imu_out", 100, &Viewer::imu_callback,this);
 		
 		angle = y = z = 0.0;
